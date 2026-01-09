@@ -1,4 +1,3 @@
-
 from flask import Flask, request
 import google.generativeai as genai
 import os
@@ -6,9 +5,11 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 app = Flask(__name__)
 
-# إعداد مفتاح جوجل (استخدام الموديل الجديد فلاش)
+# إعداد جوجل
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+
+# استخدام موديل 1.5-pro لضمان أعلى توافق
+model = genai.GenerativeModel('gemini-1.5-pro')
 
 @app.route("/bot", methods=['POST'])
 def bot():
@@ -17,18 +18,17 @@ def bot():
     msg = resp.message()
 
     if not incoming_msg:
-        msg.body('أنا هنا! أرسل لي أي سؤال.')
+        msg.body('أهلاً بك! أنا أعمل الآن. أرسل لي أي سؤال.')
         return str(resp)
 
     try:
-        # إرسال السؤال إلى جوجل
+        # محاولة توليد رد
         response = model.generate_content(incoming_msg)
-        bot_reply = response.text
-        msg.body(bot_reply)
+        msg.body(response.text)
     except Exception as e:
-        msg.body('عذراً، حدث خطأ بسيط. حاول مرة أخرى لاحقاً.')
-        print(f"Error: {e}")
-
+        # في حال حدوث خطأ، سيصلك وصف الخطأ في الواتساب مباشرة
+        msg.body(f"⚠️ تنبيه من النظام: {str(e)}")
+    
     return str(resp)
 
 if __name__ == "__main__":
