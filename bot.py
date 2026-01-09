@@ -8,8 +8,18 @@ app = Flask(__name__)
 # إعداد جوجل
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
-# استخدام موديل 1.5-pro لضمان أعلى توافق
-model = genai.GenerativeModel('gemini-1.5-pro')
+def get_response(user_input):
+    # قائمة بأسماء الموديلات الممكنة - سيجربها البوت واحداً تلو الآخر
+    models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+    
+    for model_name in models_to_try:
+        try:
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(user_input)
+            return response.text
+        except Exception:
+            continue # إذا فشل موديل ينتقل للذي يليه
+    return "عذراً، لم أستطع العثور على موديل نشط في حسابك حالياً."
 
 @app.route("/bot", methods=['POST'])
 def bot():
@@ -18,16 +28,12 @@ def bot():
     msg = resp.message()
 
     if not incoming_msg:
-        msg.body('أهلاً بك! أنا أعمل الآن. أرسل لي أي سؤال.')
+        msg.body('أنا أسمعك، تفضل بسؤالك.')
         return str(resp)
 
-    try:
-        # محاولة توليد رد
-        response = model.generate_content(incoming_msg)
-        msg.body(response.text)
-    except Exception as e:
-        # في حال حدوث خطأ، سيصلك وصف الخطأ في الواتساب مباشرة
-        msg.body(f"⚠️ تنبيه من النظام: {str(e)}")
+    # تشغيل البحث التلقائي عن الموديل
+    reply = get_response(incoming_msg)
+    msg.body(reply)
     
     return str(resp)
 
