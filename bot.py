@@ -6,9 +6,9 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 app = Flask(__name__)
 
-# إعداد مفتاح جوجل جميني
+# إعداد مفتاح جوجل (استخدام الموديل الجديد فلاش)
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-pro')
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 @app.route("/bot", methods=['POST'])
 def bot():
