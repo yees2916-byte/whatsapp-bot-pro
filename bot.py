@@ -4,7 +4,10 @@ import os
 from twilio.twiml.messaging_response import MessagingResponse
 
 app = Flask(__name__)
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+
+# إعداد المفتاح
+api_key = os.environ.get("GEMINI_API_KEY")
+genai.configure(api_key=api_key)
 
 @app.route("/bot", methods=['POST'])
 def bot():
@@ -13,21 +16,18 @@ def bot():
     msg = resp.message()
 
     try:
-        # 1. جلب قائمة كل الموديلات المتاحة لك فعلياً
-        available_models = [m.name for m in genai.list_models()]
-        
-        # 2. محاولة استخدام الموديل الأكثر استقراراً (بدون كلمة beta)
-        # سنجرب gemini-1.5-flash أو gemini-pro
-        model_to_use = 'gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else 'gemini-pro'
-        
-        model = genai.GenerativeModel(model_to_use)
+        # الاسم الجديد والمستقر لموديل جوجل (بدون كلمة models/ وبدون v1beta)
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(incoming_msg)
         msg.body(response.text)
-        
     except Exception as e:
-        # إذا فشل، سيرسل لك القائمة التي وجدها لتخبرني بها
-        models_str = ", ".join([m.name for m in genai.list_models()])
-        msg.body(f"⚠️ لم أجد الموديل. الموديلات المتاحة في حسابك هي:\n{models_str}\n\nالخطأ: {str(e)}")
+        # إذا فشل، سنقوم بجلب الأسماء المتاحة فعلياً في حسابك الآن
+        try:
+            available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+            models_list = "\n".join(available_models)
+            msg.body(f"⚠️ الموديل الافتراضي لم يعمل.\nالأسماء المتاحة في حسابك هي:\n{models_list}")
+        except Exception as e2:
+            msg.body(f"⚠️ خطأ في الصلاحيات: تأكد أن المفتاح API Key مفعّل ومربوط بمشروع جديد.")
     
     return str(resp)
 
