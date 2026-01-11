@@ -6,8 +6,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 app = Flask(__name__)
 
 # إعداد المفتاح
-api_key = os.environ.get("GEMINI_API_KEY")
-genai.configure(api_key=api_key)
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 @app.route("/bot", methods=['POST'])
 def bot():
@@ -16,13 +15,18 @@ def bot():
     msg = resp.message()
 
     try:
-        # محاولة استخدام موديل Flash المجاني
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # استخدام الاسم المحدث للموديل (gemini-1.5-flash-latest)
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
         response = model.generate_content(incoming_msg)
         msg.body(response.text)
     except Exception as e:
-        # هذه المرة، البوت سيرسل لك "نص الخطأ" لتعرف المشكلة
-        msg.body(f"⚠️ خطأ تقني: {str(e)}")
+        # إذا فشل، نحاول استخدام النسخة 1.0 (الأكثر استقراراً)
+        try:
+            model = genai.GenerativeModel('gemini-pro')
+            response = model.generate_content(incoming_msg)
+            msg.body(response.text)
+        except Exception as e2:
+            msg.body(f"⚠️ تنبيه: جوجل تطلب تحديث الربط. الخطأ: {str(e2)}")
     
     return str(resp)
 
