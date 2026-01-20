@@ -5,46 +5,39 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 app = Flask(__name__)
 
-# إعداد المفتاح
+# إعداد المفتاح من Render
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-
-def select_working_model():
-    """وظيفة ذكية تبحث عن الموديل المتاح في حسابك لتجنب خطأ 404"""
-    try:
-        # نسأل جوجل عن الموديلات التي تدعم إنشاء المحتوى
-        available_models = [m.name for m in genai.list_models() 
-                           if 'generateContent' in m.supported_generation_methods]
-        
-        # قائمة الأولويات (نبحث عن الأكثر كرماً والأحدث)
-        # نضع 1.5-flash أولاً لأنه يعطي 1500 رسالة يومياً
-        priorities = ['models/gemini-1.5-flash', 'models/gemini-1.5-flash-latest', 'models/gemini-1.0-pro']
-        
-        for p in priorities:
-            if p in available_models:
-                return p
-        
-        # إذا لم يجد أياً من المذكور، يأخذ أول موديل متاح في القائمة
-        return available_models[0] if available_models else 'models/gemini-1.5-flash'
-    except Exception as e:
-        print(f"Error listing models: {e}")
-        return 'models/gemini-1.5-flash'
-
-# البوت يختار الموديل عند التشغيل
-CHOSEN_MODEL = select_working_model()
-model = genai.GenerativeModel(CHOSEN_MODEL)
 
 @app.route("/bot", methods=['POST'])
 def bot():
-    user_msg = request.values.get('Body', '').strip()
+    user_msg = request.values.get('Body', '').strip().lower()
     resp = MessagingResponse()
     
+    # قائمة كلمات الترحيب للرد بالرسالة الخاصة
+    greetings = ['سلام', 'مرحبا', 'أهلا', 'صباح الخير', 'مساء الخير', 'السلام عليكم']
+    
+    # إذا كانت الرسالة تحتوي على تحية
+    if any(greet in user_msg for greet in greetings):
+        welcome_text = (
+            "مرحباً بك. أنا المساعد الذكي للأستاذ *عالم عبد الله*. \n\n"
+            "أتشرف بخدمتك في رحاب هذا العمل الذي أهداه صاحبه صدقة جارية عن روح والده: "
+            "*المجاهد حافظ القرآن الكريم، وإمام مسجد بلدية تيرسين بولاية سعيدة، الولي الصالح 'عالم الحاج المكي'* (رحمه الله وأسكنه فسيح جناته). \n\n"
+            "💡 *للعلم:* أستقبل حالياً *20 رسالة يومياً* فقط. كيف يمكنني مساعدتك اليوم؟"
+        )
+        resp.message(welcome_text)
+        return str(resp)
+
     try:
-        # استخدام الموديل المختار تلقائياً
+        # الموديل المعتمد (2.5-flash) مع حد 20 رسالة
+        model = genai.GenerativeModel('gemini-2.5-flash')
         ai_response = model.generate_content(user_msg)
         resp.message(ai_response.text)
+        
     except Exception as e:
-        # إذا حدث خطأ الكوتا (429) أو غيره، يخبرنا باسم الموديل المستخدم
-        resp.message(f"⚠️ الموديل: {CHOSEN_MODEL}\nالخطأ: {str(e)}")
+        if "429" in str(e):
+            resp.message("⚠️ عذراً، لقد انتهت حصة الـ 20 رسالة المجانية لهذا اليوم. نلتقي غداً بإذن الله!")
+        else:
+            resp.message(f"⚠️ عذراً، واجهت مشكلة تقنية بسيطة: {str(e)}")
     
     return str(resp)
 
