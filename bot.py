@@ -5,9 +5,8 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 app = Flask(__name__)
 
-# إعداد المفتاح
-api_key = os.environ.get("GEMINI_API_KEY")
-genai.configure(api_key=api_key)
+# إعداد المفتاح الجديد من Render
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 @app.route("/bot", methods=['POST'])
 def bot():
@@ -16,18 +15,12 @@ def bot():
     msg = resp.message()
 
     try:
-        # الاسم الجديد والمستقر لموديل جوجل (بدون كلمة models/ وبدون v1beta)
+        # استخدام الموديل الأحدث الذي يدعم كل المفاتيح الجديدة
         model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(incoming_msg)
         msg.body(response.text)
     except Exception as e:
-        # إذا فشل، سنقوم بجلب الأسماء المتاحة فعلياً في حسابك الآن
-        try:
-            available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-            models_list = "\n".join(available_models)
-            msg.body(f"⚠️ الموديل الافتراضي لم يعمل.\nالأسماء المتاحة في حسابك هي:\n{models_list}")
-        except Exception as e2:
-            msg.body(f"⚠️ خطأ في الصلاحيات: تأكد أن المفتاح API Key مفعّل ومربوط بمشروع جديد.")
+        msg.body(f"⚠️ البوت متصل بالمفتاح الجديد، لكن هناك ملاحظة: {str(e)}")
     
     return str(resp)
 
