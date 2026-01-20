@@ -5,23 +5,23 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 app = Flask(__name__)
 
-# إعداد المفتاح الجديد من Render
+# إعداد المفتاح
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 @app.route("/bot", methods=['POST'])
 def bot():
-    incoming_msg = request.values.get('Body', '').strip()
+    user_msg = request.values.get('Body', '').strip()
     resp = MessagingResponse()
-    msg = resp.message()
 
     try:
-        # استخدام الموديل الأحدث الذي يدعم كل المفاتيح الجديدة
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(incoming_msg)
-        msg.body(response.text)
+        # استخدام أحدث مسمى للموديل لضمان العمل
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        ai_response = model.generate_content(user_msg)
+        resp.message(ai_response.text)
     except Exception as e:
-        msg.body(f"⚠️ البوت متصل بالمفتاح الجديد، لكن هناك ملاحظة: {str(e)}")
-    
+        # في حال وجود مشكلة تقنية بسيطة
+        resp.message(f"⚠️ عذراً، حدث خطأ في معالجة الرد: {str(e)}")
+
     return str(resp)
 
 if __name__ == "__main__":
