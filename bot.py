@@ -8,21 +8,19 @@ app = Flask(__name__)
 # إعداد المفتاح
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
-# إعداد الموديل "الكريم" (1.5 Flash) لضمان عدم توقف البوت
+# استخدام الموديل المتوافق "gemini-pro" ليعمل فوراً
 model = genai.GenerativeModel('gemini-pro')
-
 
 @app.route("/bot", methods=['POST'])
 def bot():
-    # تنظيف الرسالة القادمة
+    # تنظيف الرسالة
     user_msg = request.values.get('Body', '').strip().lower()
     resp = MessagingResponse()
     
-    # قائمة الكلمات التي تستدعي رسالة الترحيب
+    # قائمة التحية
     greetings = ['سلام', 'مرحبا', 'مرحباً', 'أهلا', 'هلا', 'hi', 'hello', 'start', 'باسم الله']
     
-    # 1. التحقق: هل الرسالة تحية؟
-    # إذا كانت تحية، يرسل التعريف بالوالد فوراً دون استهلاك الذكاء الاصطناعي
+    # 1. الرد على التحية (من الذاكرة)
     if any(greet in user_msg for greet in greetings):
         welcome_text = (
             "مرحباً بك. أنا المساعد الذكي للأستاذ *عالم عبد الله*. \n\n"
@@ -34,18 +32,14 @@ def bot():
         resp.message(welcome_text)
         return str(resp)
 
-    # 2. إذا لم تكن تحية، أرسلها للذكاء الاصطناعي للإجابة
+    # 2. الرد على الأسئلة (باستخدام جوجل)
     try:
-        # إرسال السؤال لجوجل
-        ai_response =    model = genai.GenerativeModel('gemini-pro')
-    (user_msg)
-        
-        # الرد بالإجابة
+        ai_response = model.generate_content(user_msg)
         resp.message(ai_response.text)
         
     except Exception as e:
-        # في حال حدوث أي خطأ
-        resp.message("⚠️ عذراً، حدث خطأ تقني بسيط. يرجى إعادة المحاولة.")
+        # هذا الجزء هو الذي كان ناقصاً وتسبب في الخطأ
+        resp.message("عذراً، حدث خطأ تقني بسيط.")
         print(f"Error: {e}")
     
     return str(resp)
