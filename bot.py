@@ -1,13 +1,17 @@
-from flask import Flask
-import google.generativeai as genai
 import os
+from flask import Flask, request
+from twilio.twiml.messaging_response import MessagingResponse
+import google.generativeai as genai
 
 app = Flask(__name__)
 
-# إعداد المفتاح
+# إعداد مفتاح Gemini
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
-# هذا الجزء سيعمل فور تشغيل السيرفر ويطبع الموديلات في الشاشة السوداء
+# تحديد الموديل (تم تعديل الاسم ليتوافق مع الحل الجديد)
+model = genai.GenerativeModel('models/gemini-1.5-flash')
+
+# هذا الجزء سيعمل فور تشغيل السيرفر ويطبع الموديلات في الشاشة السوداء (للتأكد فقط)
 print("----- بدأت عملية فحص الموديلات -----")
 try:
     for m in genai.list_models():
@@ -17,9 +21,10 @@ except Exception as e:
     print(f"❌ خطأ في جلب الموديلات: {e}")
 print("----- انتهى الفحص -----")
 
-@app.route("/bot", methods=['POST'])
+@app.route("/bot", methods=["POST"])
 def bot():
-    return "Bot is running check logs"
+    # استقبال النص القادم من Twilio
+    incoming_msg = request.values.get("Body", "").strip()
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=10000)
+    # إنشاء المتغير للاستخدام أدناه
+    reply_text =
