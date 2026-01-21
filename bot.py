@@ -9,7 +9,8 @@ app = Flask(__name__)
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 # إعداد الموديل "الكريم" (1.5 Flash) لضمان عدم توقف البوت
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-pro')
+
 
 @app.route("/bot", methods=['POST'])
 def bot():
