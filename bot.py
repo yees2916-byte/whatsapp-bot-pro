@@ -37,7 +37,8 @@ def bot():
     # 2. إذا لم تكن تحية، أرسلها للذكاء الاصطناعي للإجابة
     try:
         # إرسال السؤال لجوجل
-        ai_response = model.generate_content(user_msg)
+        ai_response =    model = genai.GenerativeModel('gemini-pro')
+    (user_msg)
         
         # الرد بالإجابة
         resp.message(ai_response.text)
